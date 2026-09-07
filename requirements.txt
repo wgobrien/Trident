@@ -1,0 +1,14 @@
+python==3.10
+pyro-ppl
+anndata
+scikit-learn
+scipy
+pandas
+polars
+pysam
+seaborn
+ipykernel
+fastcluster
+graphviz
+matplotlib-venn
+taxutils

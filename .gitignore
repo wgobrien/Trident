@@ -1,0 +1,19 @@
+*__pycache__/*
+*.ipynb_*
+data/
+notebooks/
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+*.o
+
+# Build executables
+trident/tools/build_data/coverage
+trident/tools/build_data/build_counts
+
+tests/
+results/
+trident.egg-info/

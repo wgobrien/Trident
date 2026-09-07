@@ -1,0 +1,29 @@
+name: trident
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - pip
+  - make
+  - compilers
+  - kraken2
+  - megahit
+  - minimap2
+  - pyro-ppl>=1.9.1
+  - numpy>=1.21
+  - anndata
+  - pandas
+  - seaborn
+  - graphviz
+  - requests
+  - fastcluster
+  - scipy
+  - polars
+  - pysam
+  - scikit-learn
+  - ipykernel
+  - matplotlib-venn
+  - pip:
+      - taxutils
+      - -e .

@@ -1,0 +1,70 @@
+[project]
+name = "trident"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pyro-ppl>=1.9.1",
+    "numpy>=1.21",
+    "anndata",
+    "h5py<3.15; python_version < '3.11'",
+    "pandas",
+    "seaborn",
+    "graphviz",
+    "requests",
+    "fastcluster",
+    "scipy",
+    "polars",
+    "pysam",
+    "scikit-learn",
+    "matplotlib-venn",
+    "taxutils",
+]
+
+[project.scripts]
+trident = "trident.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["trident*"]
+
+[tool.poetry]
+name = "trident"
+version = "1.0"
+description = ""
+packages = [{include = "trident", from="."}]
+authors = [
+    "William O'Brien <wob@cs.ucla.edu>",
+]
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/wgobrien/trident"
+repository = "https://github.com/wgobrien/trident"
+keywords = ["metagenomics"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pyro-ppl = ">=1.9.1"
+numpy = ">=1.21"
+anndata = "*"
+pandas = "*"
+seaborn = "*"
+graphviz = "*"
+requests = "*"
+fastcluster = "*"
+scipy = "*"
+polars = "*"
+pysam = "*"
+scikit-learn = "*"
+matplotlib-venn = "*"
+taxutils = "*"
+
+[tool.poetry.scripts]
+trident = "trident.cli:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
