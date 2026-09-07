@@ -1,6 +1,6 @@
 [project]
 name = "trident"
-version = "0.1.0"
+version = "1.0.0"
 requires-python = ">=3.10"
 dependencies = [
     "pyro-ppl>=1.9.1",
@@ -28,7 +28,7 @@ include = ["trident*"]
 
 [tool.poetry]
 name = "trident"
-version = "1.0"
+version = "1.0.0"
 description = ""
 packages = [{include = "trident", from="."}]
 authors = [
@@ -38,7 +38,7 @@ license = "MIT"
 readme = "README.md"
 homepage = "https://github.com/wgobrien/trident"
 repository = "https://github.com/wgobrien/trident"
-keywords = ["metagenomics"]
+keywords = ["metagenomics", "genomics", "classification", "probabilistic programming", "k-mer", "minimizer", "clustering"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
