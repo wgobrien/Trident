@@ -91,8 +91,8 @@ class DevelopCommand(develop):
 
 setup(
     name="trident",
-    version="0.1.0",
-    description="Metagenomic re-estimation utilities",
+    version="1.0.0",
+    description="A probabilistic program for taxonomic profiling in metagenomic reads.",
     author="William O'Brien",
     author_email="wob@cs.ucla.edu",
     license="MIT",
