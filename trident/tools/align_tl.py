@@ -198,6 +198,11 @@ def build_header(c):
     return base + annotation
 
 
+def _has_blast_annotation(header):
+    """Return whether a FASTA header contains a completed BLAST annotation."""
+    return re.search(r"(?:^|\s)blast_top_acc=\S+", header) is not None
+
+
 def blast_contigs(acc_adata):
     filepath = acc_adata.uns["trident"]["contigs"]
     contig_list = parse_fasta(filepath)
@@ -207,6 +212,14 @@ def blast_contigs(acc_adata):
     try:
         with open(tmp_path, "w") as tmp_f:
             for c in contig_list:
+                if _has_blast_annotation(c.header):
+                    print(f"Skipping {c.header.split(' blast_top_acc=')[0]} (already annotated)...")
+                    tmp_f.write(f">{c.header}\n")
+                    for i in range(0, len(c.sequence), 60):
+                        tmp_f.write(c.sequence[i:i+60] + "\n")
+                    tmp_f.flush()
+                    continue
+
                 print(f"BLASTing {c.header}...")
                 try:
                     (c.blast_closest_accs,

@@ -5,11 +5,9 @@ import shutil
 from .global_utils import RunResourceTracker, get_basename_from_reads, TRIDENT_GLOBALS, get_logger
 from .tools.utils import checkpoint
 from .tools.model import TridentConfig
-from .tools.data import load_adata, load_accession_adata, taxutils
-from .tools.evals import _get_read_probabilities, reestimate, var_marginal, get_posteriors
+from .tools.data import load_accession_adata
 from .tools.align_tl import align, cluster_consensus, blast_contigs
 from .plot.align_pl import coverage
-from .plot.post import read_cluster
 
 logger = get_logger(__name__)
 
@@ -38,16 +36,35 @@ def _read_cluster_skip_reason(acc_adata):
         return "fewer than five accession-fit reads are available for read clustering"
     return "read clustering produced no usable clusters"
 
+
+def _precomputed_validation_skip_reason(acc_adata):
+    """Return a reason when saved accession results lack validation inputs."""
+    missing = []
+    if "marginal_proba" not in acc_adata.var.columns:
+        missing.append('.var["marginal_proba"]')
+    if "accession_reestimation" not in acc_adata.obs.columns:
+        missing.append('.obs["accession_reestimation"]')
+    if "read_cluster" not in acc_adata.obs.columns:
+        missing.append('.obs["read_cluster"]')
+
+    if missing:
+        fields = ", ".join(missing)
+        return (
+            f"saved accession data is missing precomputed field(s): {fields}; "
+            "rerun `trident accession` before `trident check`"
+        )
+
+    return _read_cluster_skip_reason(acc_adata)
+
 def check(args):
     """
     Validate accession-level results by aligning reads, computing coverage,
     and generating consensus contigs with BLAST verification.
 
-    Requires that `trident accession` has been run prior to invocation.
+    Requires the probabilities, reestimations, and read clusters persisted by
+    `trident accession`; these model outputs are not recomputed here.
     """
     with RunResourceTracker("check", args, logger=logger) as tracker:
-        if shutil.which("megahit") is None:
-            raise EnvironmentError("megahit not found. Install with: conda install -c bioconda megahit=1.2.9 -y")
         config = TridentConfig(
             reads=args.reads,
             pair=args.pair,
@@ -69,26 +86,14 @@ def check(args):
         fig_path = os.path.join(args.output, "figs") if args.save_figs else None
         if args.save_figs:
             os.makedirs(fig_path, exist_ok=True)
-        sqlite = not getattr(args, "low_memory", False)
-        taxonomic_data = taxutils(config)
-        acc_adata = load_accession_adata(config=config, taxonomic_data=taxonomic_data, rebuild=False)
+        acc_adata = load_accession_adata(config=config, rebuild=False)
         skip_reason = _accession_skip_reason(acc_adata)
         if skip_reason is not None:
             logger.warning("Skipping check for %s: %s.", basename, skip_reason)
             tracker.mark(skipped=True, skip_reason=skip_reason)
             return None
 
-        get_posteriors(acc_adata, num_samples=1000)
-        taxonomic_data.load_a2t(list(acc_adata.var.accession.values), low_memory=not sqlite)
-        acc_adata.var["taxid"] = acc_adata.var["accession"].map(taxonomic_data.a2t).astype(str)
-        acc_adata.var["name"] = acc_adata.var["accession"] + " ("+ acc_adata.var["taxid"].map(taxonomic_data.names) + ")"
-        _get_read_probabilities(acc_adata)
-        reestimate(acc_adata)
-        var_marginal(acc_adata, taxonomic_data)
-        read_cluster(
-            acc_adata, n_reads_subsample=1000, top_n_var=30,
-        )
-        skip_reason = _read_cluster_skip_reason(acc_adata)
+        skip_reason = _precomputed_validation_skip_reason(acc_adata)
         if skip_reason is not None:
             logger.warning("Skipping check for %s: %s.", basename, skip_reason)
             tracker.mark(skipped=True, skip_reason=skip_reason)
@@ -114,11 +119,18 @@ def check(args):
             tracker.mark(skipped=True, skip_reason=skip_reason)
             return None
         coverage(acc_adata, top_n=4, by="marginal_proba", save_path=os.path.join(fig_path, "coverage_by_proba.png") if args.save_figs else None,)
-        with tracker.step(
-            "assembly",
-            read_clusters=int(acc_adata.obs["read_cluster"].nunique()) if "read_cluster" in acc_adata.obs.columns else None,
-        ):
-            cluster_consensus(acc_adata, output_path=args.output)
+        existing_contigs = os.path.join(args.output, "cluster_contigs.fasta")
+        if os.path.isfile(existing_contigs):
+            logger.info("Reusing existing contigs from %s.", existing_contigs)
+            acc_adata.uns["trident"]["contigs"] = existing_contigs
+        else:
+            if shutil.which("megahit") is None:
+                raise EnvironmentError("megahit not found. Install with: conda install -c bioconda megahit=1.2.9 -y")
+            with tracker.step(
+                "assembly",
+                read_clusters=int(acc_adata.obs["read_cluster"].nunique()) if "read_cluster" in acc_adata.obs.columns else None,
+            ):
+                cluster_consensus(acc_adata, output_path=args.output)
         contigs = blast_contigs(acc_adata)
         logger.info("Saving anndata...")
         checkpoint(acc_adata)
